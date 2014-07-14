@@ -46,13 +46,6 @@ int main() {
 }
 ```
 
-## Main Features
-* Supports C++11 standard
-* Requires HippMocks library (submodule)
-* Requires DI library (submodule)
-* Automatically create needed mocks for classes
-* Supports smart pointers (including unique_ptr) / automatically add expectations for destructor's
-
 ## License
 Distributed under the [Boost Software License, Version 1.0](http://www.boost.org/LICENSE_1_0.txt).
 

@@ -8,6 +8,7 @@
 #include <boost/utility/enable_if.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/mpl/has_xxx.hpp>
+#include <boost/mpl/bool.hpp>
 #include <hippomocks.h>
 #include <boost/bind.hpp>
 #include <boost/function.hpp>
@@ -66,13 +67,27 @@ class mocks_injector
     template<typename T>
     class mock_policy
     {
+        template<typename>
+        struct is_unique_ptr
+            : boost::mpl::false_
+        { };
+
+        template<typename TPtr>
+        struct is_unique_ptr<std::unique_ptr<TPtr>>
+            : boost::mpl::true_
+        { };
+
     public:
         mock_policy(mocks_injector& mi)
             : mocks_injector_(mi)
         { }
 
         ~mock_policy() {
-            for (auto it = v.begin(); it != v.end(); ++it) {
+            for (auto it = ups.begin(); it != ups.end(); ++it) {
+                (*it)();
+            }
+
+            for (auto it = sps.rbegin(); it != sps.rend(); ++it) {
                 (*it)();
             }
         }
@@ -84,7 +99,11 @@ class mocks_injector
         template<typename TDependency>
         typename boost::disable_if_c<boost::is_same<T, typename TDependency::type>::value>::type
         assert_policy() const {
-            v.push_back(boost::bind(&mock_policy::expect_call_destructor<typename TDependency::type>, this));
+            if (is_unique_ptr<typename di::type_traits::remove_accessors<typename TDependency::type>::type>::value) {
+                ups.push_back(boost::bind(&mock_policy::expect_call_destructor<typename TDependency::type>, this));
+            } else {
+                sps.push_back(boost::bind(&mock_policy::expect_call_destructor<typename TDependency::type>, this));
+            }
         }
 
     private:
@@ -99,8 +118,10 @@ class mocks_injector
             mocks_injector_.ExpectCallDestructor(mocks_injector_.template acquire<typename type::element_type>());
         }
 
+
         mocks_injector& mocks_injector_;
-        mutable std::vector<boost::function<void()>> v;
+        mutable std::vector<boost::function<void()>> ups;
+        mutable std::vector<boost::function<void()>> sps;
     };
 
 public:
@@ -136,7 +157,7 @@ auto make_mocks_injector(const TArgs&... args) {
     return mocks_injector<BOOST_DI_FEATURE_DECLTYPE(di::make_injector(args...))>(di::make_injector(args...));
 }
 
-#define EXPECT_CALL(obj, func) \
+#define expect_call(obj, func) \
     obj.ExpectCall(obj.acquire<typename boost::di::type_traits::function_traits<BOOST_DI_FEATURE_DECLTYPE(&func)>::base_type>(), func)
 
 /////////////////////////////////
@@ -152,6 +173,21 @@ public:
     virtual ~ilogic() {};
     virtual void do_it() = 0;
 };
+
+//class example {
+//public:
+    //example(std::shared_ptr<ilogic> logic, const std::shared_ptr<ilogger>& logger)
+        //: logic_(logic), logger_(logger)
+    //{ }
+
+    //void run() {
+        //logic_->do_it();
+        //logger_->log("hello world");
+    //}
+
+    //std::shared_ptr<ilogic> logic_;
+    //std::shared_ptr<ilogger> logger_;
+//};
 
 class example {
 public:
@@ -171,8 +207,8 @@ public:
 int main()
 {
     auto mi = make_mocks_injector();
-    EXPECT_CALL(mi, ilogic::do_it);
-    EXPECT_CALL(mi, ilogger::log).With("hello world");
+    expect_call(mi, ilogic::do_it);
+    expect_call(mi, ilogger::log).With("hello world");
     mi.create<std::unique_ptr<example>>()->run();
 
     return 0;

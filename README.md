@@ -36,8 +36,8 @@ int main() {
     auto mi = di::make_mocks_injector();
 
     //2. set up expectations
-    expect_call(mi, ilogic::do_it);
-    expect_call(mi, ilogger::log).With("hello world");
+    EXPECT_CALL(mi, ilogic::do_it);
+    EXPECT_CALL(mi, ilogger::log).With("hello world");
 
     //3. create example class and run it
     mi.create<example>().run(); // or mi.create<std::unique_ptr<example>>()->run();

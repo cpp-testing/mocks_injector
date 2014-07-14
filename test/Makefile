@@ -4,7 +4,11 @@
 # Distributed under the Boost Software License, Version 1.0.
 # (See accompanying file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 #
+TGT=mocks_injector_test
 
 test:
-	$(CXX) -Wall -Wextra -pedantic --std=c++11 mocks_injector_mt.cpp -o mocks_injector_mt -I.. -I../di/include -I../hippomocks/HippoMocks && ./mocks_injector_mt
+	$(CXX) -Wall -Wextra -pedantic --std=c++11 $(TGT).cpp -o $(TGT) -I.. -I../di/include -I../hippomocks/HippoMocks && ./$(TGT) >/dev/null
+
+clean:
+	rm -f $(TGT)
 

@@ -33,12 +33,7 @@ class mocks_injector
             return lhs->before(*rhs);
         }
     };
-
-    typedef std::map<
-        const std::type_info*
-      , void*
-      , type_comparator
-    > mocks_type;
+    typedef std::map<const std::type_info*, void*, type_comparator> mocks_type;
 
     template<typename T>
     class mock_allocator : boost::noncopyable {
@@ -120,7 +115,7 @@ public:
             return static_cast<T*>(it->second);
         }
 
-        T* ptr = Mock<T>();
+        auto* ptr = Mock<T>();
         mocks_[&typeid(T)] = static_cast<void*>(ptr);
         return ptr;
     }

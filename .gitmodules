@@ -1,0 +1,6 @@
+[submodule "hippomocks"]
+	path = hippomocks
+	url = https://github.com/dascandy/hippomocks.git
+[submodule "di"]
+	path = di
+	url = git@github.com:krzysztof-jusiak/di.git

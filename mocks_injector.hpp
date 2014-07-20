@@ -80,17 +80,17 @@ class mocks_injector
         template<typename TDependency>
         typename boost::disable_if_c<boost::is_same<T, typename TDependency::type>::value>::type
         assert_policy() const {
-            EXPECT_CALL_destructor<typename TDependency::type>();
+            expect_call_destructor<typename TDependency::type>();
         }
 
     private:
         template<typename TExpected>
         typename boost::disable_if<has_element_type<typename boost::di::type_traits::remove_accessors<TExpected>::type> >::type
-        EXPECT_CALL_destructor() const { }
+        expect_call_destructor() const { }
 
         template<typename TExpected>
         typename boost::enable_if<has_element_type<typename boost::di::type_traits::remove_accessors<TExpected>::type> >::type
-        EXPECT_CALL_destructor() const {
+        expect_call_destructor() const {
             using type = typename boost::di::type_traits::remove_accessors<TExpected>::type;
             mocks_injector_.ExpectCallDestructor(mocks_injector_.template acquire<typename type::element_type>());
         }

@@ -19,6 +19,7 @@
 #include <hippomocks.h>
 #include <boost/di.hpp>
 
+namespace boost {
 namespace di {
 
 template<typename TInjector = boost::di::injector<> >
@@ -131,6 +132,7 @@ auto make_mocks_injector(const TArgs&... args) -> decltype(mocks_injector<declty
 }
 
 } // namespace di
+} // namespace boost
 
 #define EXPECT_CALL(obj, func) \
     obj.ExpectCall(obj.acquire<typename boost::di::type_traits::function_traits<decltype(&func)>::base_type>(), func)

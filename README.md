@@ -1,4 +1,4 @@
-# C++ Automatic Mocks Injector
+*** C++ Automatic Mocks Injector ***
 
 ## Introduction
 C++ Automatic Mocks Injector is C++11 header only library providing following functionality:

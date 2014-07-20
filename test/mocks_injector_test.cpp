@@ -92,7 +92,7 @@ private:
 
 int main() {
     auto test_mocks_injection_sp = [] {
-        auto mi = di::make_mocks_injector();
+        auto mi = boost::di::make_mocks_injector();
         EXPECT_CALL(mi, ilogger::log).With("hello world");
         EXPECT_CALL(mi, ilogic::do_it);
         mi.create<example_sp>().run();
@@ -101,7 +101,7 @@ int main() {
     auto test_mocks_injection_sp_fail_due_to_empty_log = [] {
         bool exception = false;
         try {
-            auto mi = di::make_mocks_injector();
+            auto mi = boost::di::make_mocks_injector();
             EXPECT_CALL(mi, ilogger::log).With("");
             EXPECT_CALL(mi, ilogic::do_it);
             mi.create<example_sp>().run();
@@ -112,14 +112,14 @@ int main() {
     };
 
     auto test_mocks_injection_sp_order = [] {
-        auto mi = di::make_mocks_injector();
+        auto mi = boost::di::make_mocks_injector();
         EXPECT_CALL(mi, ilogger::log).With("hello world");
         EXPECT_CALL(mi, ilogic::do_it);
         mi.create<example_sp_order>().run();
     };
 
     auto test_mocks_injection_sp_up = [] {
-        auto mi = di::make_mocks_injector();
+        auto mi = boost::di::make_mocks_injector();
         EXPECT_CALL(mi, ilogger::log).With("hello world");
         EXPECT_CALL(mi, ilogic::do_it);
         mi.create<std::unique_ptr<example_sp_up>>()->run();
@@ -128,7 +128,7 @@ int main() {
     auto test_mocks_injection_up_int = [] {
         using namespace boost::di;
         const int i = 42;
-        auto mi = di::make_mocks_injector(
+        auto mi = boost::di::make_mocks_injector(
             bind<int>::to(i)
         );
         EXPECT_CALL(mi, ilogic::do_it);

@@ -91,6 +91,14 @@ private:
 } // namespace
 
 int main() {
+    auto test_mocks_injection_unit_test = [] {
+        auto _ = boost::di::make_mocks_injector();
+        example_sp sut{_, _};
+        EXPECT_CALL(_, ilogger::log).With("hello world");
+        EXPECT_CALL(_, ilogic::do_it);
+        sut.run();
+    };
+
     auto test_mocks_injection_sp = [] {
         auto mi = boost::di::make_mocks_injector();
         EXPECT_CALL(mi, ilogger::log).With("hello world");
@@ -137,7 +145,8 @@ int main() {
         assert(i == example->get_int());
     };
 
-    //run tests
+    // run tests
+    test_mocks_injection_unit_test();
     test_mocks_injection_sp();
     test_mocks_injection_sp_fail_due_to_empty_log();
     test_mocks_injection_sp_order();
@@ -146,5 +155,4 @@ int main() {
 
     return 0;
 }
-
 

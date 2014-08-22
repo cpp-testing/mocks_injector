@@ -8,7 +8,8 @@
 #define MOCKS_INJECTOR_HPP
 
 #include <typeinfo>
-#include <map>
+#include <typeindex>
+#include <unordered_map>
 #include <boost/noncopyable.hpp>
 #include <boost/type_traits/is_same.hpp>
 #include <boost/type_traits/is_polymorphic.hpp>
@@ -27,14 +28,7 @@ class mocks_injector
     : public MockRepository
 {
     BOOST_MPL_HAS_XXX_TRAIT_DEF(element_type)
-
-    class type_comparator {
-    public:
-        bool operator()(const std::type_info* lhs, const std::type_info* rhs) const {
-            return lhs->before(*rhs);
-        }
-    };
-    typedef std::map<const std::type_info*, void*, type_comparator> mocks_type;
+    using mocks_type = std::unordered_map<std::type_index, void*>;
 
     template<typename T>
     class mock_allocator : boost::noncopyable {
@@ -65,9 +59,8 @@ class mocks_injector
         mocks_type& mocks_;
     };
 
-    template<typename T>
-    class mock_policy
-    {
+    template<typename T = void>
+    class mock_policy {
     public:
         mock_policy(mocks_injector& mi)
             : mocks_injector_(mi)
@@ -110,14 +103,20 @@ public:
         return injector_.template allocate<T>(mock_allocator<T>(*this, mocks_), mock_policy<T>(*this));
     }
 
-    template<typename T> T* acquire() {
-        typename mocks_type::const_iterator it = mocks_.find(&typeid(T));
+    template<typename T>
+    operator T() {
+        return injector_.template allocate<T>(mock_allocator<T>(*this, mocks_), mock_policy<>(*this));
+    }
+
+    template<typename T>
+    T* acquire() {
+        auto it = mocks_.find(std::type_index(typeid(T)));
         if (it != mocks_.end()) {
             return static_cast<T*>(it->second);
         }
 
         auto* ptr = Mock<T>();
-        mocks_[&typeid(T)] = static_cast<void*>(ptr);
+        mocks_[std::type_index(typeid(T))] = static_cast<void*>(ptr);
         return ptr;
     }
 

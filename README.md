@@ -8,10 +8,8 @@ C++ Automatic Mocks Injector is C++11 header only library providing following fu
 * Uses [HippoMocks](https://github.com/dascandy/hippomocks) as Mocking library
 * Uses [DI](https://github.com/krzysztof-jusiak/di) as Dependency Injection library
 
-### Hello World
+### Unit Tests
 ```cpp
-#include <mocks_injector.hpp>
-
 struct ilogger { virtual ~ilogger() { }; virtual void log(const std::string&) = 0; };
 struct ilogic { virtual ~ilogic() { }; virtual void do_it() = 0; };
 
@@ -31,16 +29,57 @@ private:
     std::unique_ptr<ilogic> logic_;
 };
 
+#include <mocks_injector.hpp>
+
+int main() {
+    //1. create mocks injector and example class
+    auto _ = di::make_mocks_injector();
+    example sut{_, _};
+
+    //2. set up expectations
+    EXPECT_CALL(_, ilogic::do_it);
+    EXPECT_CALL(_, ilogger::log).With("hello world");
+
+    //3. run tests
+    sut.run();
+
+    return 0;
+}
+```
+
+### Integration Tests
+```cpp
+
+class app {
+    explicit app(std::unique_ptr<example> e, bool flag)
+        : exampe_(e), flag_(flag)
+    { }
+
+    void run() {
+        if (flag_) {
+            example_->run();
+        }
+    }
+
+private:
+    std::unique_ptr<example> exampe_;
+    bool flag_ = false;
+};
+
+#include <mocks_injector.hpp>
+
 int main() {
     //1. create mocks injector
-    auto mi = di::make_mocks_injector();
+    auto mi = di::make_mocks_injector(
+        di::bind<bool>::to(true)
+    );
 
     //2. set up expectations
     EXPECT_CALL(mi, ilogic::do_it);
     EXPECT_CALL(mi, ilogger::log).With("hello world");
 
     //3. create example class and run it
-    mi.create<example>().run(); // or mi.create<std::unique_ptr<example>>()->run();
+    mi.create<app>()->run();
 
     return 0;
 }

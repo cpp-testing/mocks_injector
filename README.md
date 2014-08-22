@@ -15,18 +15,20 @@ struct ilogic { virtual ~ilogic() { }; virtual void do_it() = 0; };
 
 class example {
 public:
-    example(std::shared_ptr<ilogger> logger, const std::unique_ptr<ilogic>& logic)
-        : logger_(logger), logic_(std::move(logic))
+    example(std::shared_ptr<ilogger> logger, const std::unique_ptr<ilogic>& logic, const std::string& text)
+        : logger_(logger), logic_(std::move(logic)), text_(text)
     { }
 
-    void run() {
+    int run() {
         logic_->do_it();
-        logger_->log("hello world");
+        logger_->log(text_);
+        return 0;
     }
 
 private:
     std::shared_ptr<ilogger> logger_;
     std::unique_ptr<ilogic> logic_;
+    std::string text_;
 };
 
 #include <mocks_injector.hpp>
@@ -34,16 +36,14 @@ private:
 int main() {
     //1. create mocks injector and example class
     auto _ = di::make_mocks_injector();
-    example sut{_, _};
+    example sut{_, _, "hello_world"};
 
     //2. set up expectations
     EXPECT_CALL(_, ilogic::do_it);
     EXPECT_CALL(_, ilogger::log).With("hello world");
 
     //3. run tests
-    sut.run();
-
-    return 0;
+    ASSERT_EQ(0, sut.run());
 }
 ```
 
@@ -51,37 +51,32 @@ int main() {
 ```cpp
 
 class app {
-    explicit app(std::unique_ptr<example> e, bool flag)
-        : exampe_(e), flag_(flag)
+    explicit app(std::unique_ptr<example> e)
+        : exampe_(e)
     { }
 
-    void run() {
-        if (flag_) {
-            example_->run();
-        }
+    int run() {
+        return example_->run();
     }
 
 private:
     std::unique_ptr<example> exampe_;
-    bool flag_ = false;
 };
 
 #include <mocks_injector.hpp>
 
 int main() {
-    //1. create mocks injector
+    //1. create mocks injector with dependencies
     auto mi = di::make_mocks_injector(
-        di::bind<bool>::to(true)
+        di::bind<std::string>::to("hello world")
+      , di::bind<ilogic, logic>() // inject real logic
     );
 
     //2. set up expectations
-    EXPECT_CALL(mi, ilogic::do_it);
     EXPECT_CALL(mi, ilogger::log).With("hello world");
 
     //3. create example class and run it
-    mi.create<app>()->run();
-
-    return 0;
+    ASSERT_EQ(0, mi.create<app>().run());
 }
 ```
 

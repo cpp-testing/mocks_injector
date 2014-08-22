@@ -15,8 +15,12 @@ struct ilogic { virtual ~ilogic() { }; virtual void do_it() = 0; };
 
 class example {
 public:
-    example(std::shared_ptr<ilogger> logger, const std::unique_ptr<ilogic>& logic, const std::string& text)
-        : logger_(logger), logic_(std::move(logic)), text_(text)
+    example(std::shared_ptr<ilogger> logger
+          , const std::unique_ptr<ilogic>& logic
+          , const std::string& text)
+        : logger_(logger)
+        , logic_(std::move(logic))
+        , text_(text)
     { }
 
     int run() {

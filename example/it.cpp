@@ -31,7 +31,7 @@ private:
 class app {
 public:
     app(std::shared_ptr<example> e)
-        : example_(std::move(e))
+        : example_(e)
     { }
 
     int run() {

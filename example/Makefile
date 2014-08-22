@@ -5,7 +5,8 @@
 # (See accompanying file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 #
 OBJS:=ut it
-test: $(OBJS)
+
+all example: $(OBJS)
 	
 %:
 	$(CXX) -Wall -Wextra -pedantic --std=c++11 $*.cpp -o $* -I../include -I../di/include -I../hippomocks/HippoMocks && ./$* >/dev/null

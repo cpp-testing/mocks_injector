@@ -53,6 +53,7 @@ int main() {
 
 ### Integration Tests
 ```cpp
+struct logic : ilogic { void do_it() override { } };
 
 class app {
     explicit app(std::unique_ptr<example> e)

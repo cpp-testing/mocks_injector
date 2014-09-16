@@ -9,6 +9,7 @@
 
 #include <typeinfo>
 #include <typeindex>
+#include <functional>
 #include <unordered_map>
 #include <boost/noncopyable.hpp>
 #include <boost/type_traits/is_same.hpp>
@@ -32,27 +33,48 @@ class mocks_injector
 
     template<typename T>
     class mock_allocator : boost::noncopyable {
+        struct not_resolved {
+            typedef not_resolved type;
+
+            template<typename>
+            struct rebind {
+                typedef not_resolved other;
+            };
+        };
+
+        template<typename TBinder, typename _>
+        struct is_bound
+            : is_same<
+                  typename TBinder::template resolve<
+                      _
+                    , mpl::vector0<>
+                    , not_resolved
+                  >::type
+                , not_resolved
+              >
+        { };
+
     public:
         mock_allocator(mocks_injector& mi, mocks_type& mocks)
             : mocks_injector_(mi), mocks_(mocks)
         { }
 
-        template<typename TExpected, typename TGiven, typename... TArgs>
+        template<typename TExpected, typename TGiven, typename TBinder, typename... TArgs>
         typename boost::disable_if_c<
-            boost::is_same<T, TExpected>::value || !boost::is_polymorphic<TExpected>::value
+            !is_bound<TBinder, TExpected>::value || boost::is_same<T, TExpected>::value || !boost::is_polymorphic<TExpected>::value
           , TExpected*
         >::type
         allocate(TArgs&&...) const {
             return mocks_injector_.acquire<TExpected>();
         }
 
-        template<typename TExpected, typename TGiven, typename... TArgs>
+        template<typename TExpected, typename TGiven, typename TBinder, typename... TArgs>
         typename boost::enable_if_c<
-            boost::is_same<T, TExpected>::value || !boost::is_polymorphic<TExpected>::value
+            !is_bound<TBinder, TExpected>::value || boost::is_same<T, TExpected>::value || !boost::is_polymorphic<TExpected>::value
           , TExpected*
         >::type
         allocate(TArgs&&... args) const {
-            return new TGiven(std::forward<TArgs>(args)...);
+            return new TGiven{std::forward<TArgs>(args)...};
         }
 
         mocks_injector& mocks_injector_;
@@ -61,17 +83,45 @@ class mocks_injector
 
     template<typename T = void>
     class mock_policy {
+        struct not_resolved {
+            typedef not_resolved type;
+
+            template<typename>
+            struct rebind {
+                typedef not_resolved other;
+            };
+        };
+
+        template<typename TDependency>
+        struct is_bound
+            : is_same<
+                  typename TDependency::binder::template resolve<
+                      typename TDependency::type
+                    , mpl::vector0<>
+                    , not_resolved
+                  >::type
+                , not_resolved
+              >
+        { };
+
     public:
         mock_policy(mocks_injector& mi)
             : mocks_injector_(mi)
         { }
 
         template<typename TDependency>
-        typename boost::enable_if_c<boost::is_same<T, typename TDependency::type>::value>::type
-        assert_policy() const { }
+        typename boost::enable_if_c<
+            boost::is_same<T, typename TDependency::type>::value ||
+           !is_bound<TDependency>::value
+        >::type
+        assert_policy() const {
+        }
 
         template<typename TDependency>
-        typename boost::disable_if_c<boost::is_same<T, typename TDependency::type>::value>::type
+        typename boost::disable_if_c<
+            boost::is_same<T, typename TDependency::type>::value ||
+           !is_bound<TDependency>::value
+        >::type
         assert_policy() const {
             expect_call_destructor<typename TDependency::type>();
         }
@@ -84,15 +134,17 @@ class mocks_injector
         template<typename TExpected>
         typename boost::enable_if<has_element_type<typename boost::di::type_traits::remove_accessors<TExpected>::type> >::type
         expect_call_destructor() const {
-            using type = typename boost::di::type_traits::remove_accessors<TExpected>::type;
-            mocks_injector_.ExpectCallDestructor(mocks_injector_.template acquire<typename type::element_type>());
+            if (boost::is_polymorphic<typename boost::di::type_traits::remove_accessors<TExpected>::type::element_type>::value) {
+                using type = typename boost::di::type_traits::remove_accessors<TExpected>::type;
+                mocks_injector_.ExpectCallDestructor(mocks_injector_.template acquire<typename type::element_type>());
+            }
         }
 
         mocks_injector& mocks_injector_;
     };
 
 public:
-    mocks_injector() { }
+    mocks_injector() = default;
 
     explicit mocks_injector(const TInjector& injector)
         : injector_(injector)
@@ -114,6 +166,7 @@ public:
         if (it != mocks_.end()) {
             return static_cast<T*>(it->second);
         }
+
 
         auto* ptr = Mock<T>();
         mocks_[std::type_index(typeid(T))] = static_cast<void*>(ptr);

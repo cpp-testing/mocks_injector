@@ -31,12 +31,13 @@ private:
 
 int main() {
     //1. create mocks injector and example class
+    const std::string hello_world = "hello world";
     auto _ = boost::di::make_mocks_injector();
-    example sut{_, _, "hello world"};
+    example sut{_, _, hello_world};
 
     //2. set up expectations
     EXPECT_CALL(_, ilogic::do_it);
-    EXPECT_CALL(_, ilogger::log).With("hello world");
+    EXPECT_CALL(_, ilogger::log).With(hello_world);
 
     //3. run tests
     assert(!sut.run());

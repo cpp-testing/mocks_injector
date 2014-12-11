@@ -6,8 +6,10 @@
 #
 TGT=mocks_injector_test
 
+CXX=clang++
+
 test:
-	$(CXX) -Wall -Wextra -pedantic --std=c++11 $(TGT).cpp -o $(TGT) -I../include -I../di/include -I../hippomocks/HippoMocks && ./$(TGT) >/dev/null
+	$(CXX) -Wall -Wextra -pedantic --std=c++1y $(TGT).cpp -o $(TGT) -I../include -I../di/include -I../hippomocks/HippoMocks && ./$(TGT) >/dev/null
 
 clean:
 	rm -f $(TGT)

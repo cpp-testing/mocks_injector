@@ -42,7 +42,7 @@ private:
     std::shared_ptr<example> example_;
 };
 
-#include <mocks_injector.hpp>
+#include <mocks_provider.hpp>
 
 int main() {
     namespace di = boost::di;
@@ -50,12 +50,12 @@ int main() {
     const std::string hello_world = "hello world";
 
     //1. create mocks injector with dependencies
-    auto mi = di::make_mocks_injector(
-        di::bind<std::string>::to(hello_world)
-      , di::bind<ilogic, logic>() // inject real logic
+    auto mi = di::make_injector<di::mocks_provider>(
+        di::bind<std::string>.to(hello_world)
+      , di::bind<ilogic, logic> // inject real logic
     );
 
-    //2. set up expectations
+    //2. set-up expectations
     EXPECT_CALL(mi, ilogger::log).With(hello_world);
 
     //3. create example class and run it

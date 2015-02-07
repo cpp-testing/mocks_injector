@@ -42,15 +42,17 @@ private:
 #include <mocks_injector.hpp>
 
 int main() {
+    namespace di = boost::di;
+
     //1. create mocks injector and example class
-    auto _ = boost::di::make_mocks_injector();
-    example sut{_, _, "hello world"};
+    auto _ = di::make_injector<di::mocks_provider>();
 
     //2. set up expectations
     EXPECT_CALL(_, ilogic::do_it);
     EXPECT_CALL(_, ilogger::log).With("hello world");
 
     //3. run tests
+    example sut{_, _, "hello world"};
     assert(0 == sut.run());
 }
 ```
@@ -79,9 +81,9 @@ int main() {
     namespace di = boost::di;
 
     //1. create mocks injector with dependencies
-    auto mi = di::make_mocks_injector(
-        di::bind<std::string>::to("hello world")
-      , di::bind<ilogic, logic>() // inject real logic
+    auto mi = di::make_injector<di::mocks_provider>(
+        di::bind<std::string>.to("hello world")
+      , di::bind<ilogic, logic> // inject real logic
     );
 
     //2. set up expectations

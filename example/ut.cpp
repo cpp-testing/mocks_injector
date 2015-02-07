@@ -27,19 +27,21 @@ private:
     std::string text_;
 };
 
-#include <mocks_injector.hpp>
+#include <mocks_provider.hpp>
 
 int main() {
+    namespace di = boost::di;
+
     //1. create mocks injector and example class
     const std::string hello_world = "hello world";
-    auto _ = boost::di::make_mocks_injector();
-    example sut{_, _, hello_world};
+    auto _ = di::make_injector<di::mocks_provider>();
 
-    //2. set up expectations
+    //2. set-up expectations
     EXPECT_CALL(_, ilogic::do_it);
     EXPECT_CALL(_, ilogger::log).With(hello_world);
 
     //3. run tests
+    example sut{_, _, hello_world};
     assert(!sut.run());
 }
 

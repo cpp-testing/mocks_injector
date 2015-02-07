@@ -7,10 +7,12 @@
 OBJS:=ut it
 .PHONY: all clean
 
+CXX=clang++
+
 all example: $(OBJS)
 	
 %:
-	$(CXX) -Wall -Wextra -pedantic --std=c++11 $*.cpp -o $* -I../include -I../di/include -I../hippomocks/HippoMocks && ./$* >/dev/null
+	$(CXX) -Wall -Wextra -pedantic --std=c++1y $*.cpp -o $* -I../include -I../di/include -I../hippomocks/HippoMocks && ./$* >/dev/null
 
 clean:
 	rm -f $(OBJS)

@@ -1,10 +1,10 @@
 **C++ Automatic Mocks Injector**
 
 ## Introduction
-C++ Automatic Mocks Injector is C++11 header only library providing following functionality:
+C++ Automatic Mocks Injector is C++14 header only library providing following functionality:
 * Automatically create required mocks
 * Automatically inject mocks to tested classes via constructor
-* Automatically register for required destructor's in case of smart pointers (supports testing of unique_ptr)
+* Automatically register for required destructor's in case of smart pointers (supports testing of unique\_ptr)
 * Uses [HippoMocks](https://github.com/dascandy/hippomocks) as Mocking library
 * Uses [DI](https://github.com/krzysztof-jusiak/di) as Dependency Injection library
 

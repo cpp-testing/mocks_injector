@@ -14,6 +14,97 @@
 #include <unordered_map>
 #define DEFAULT_AUTOEXPECT false
 #include <hippomocks.h>
+
+#define BOOST_DI_TYPE_TRAITS_SCOPE_TRAITS_HPP
+#include <boost/shared_ptr.hpp>
+#include <boost/di/scopes/unique.hpp>
+#include <boost/di/scopes/shared.hpp>
+#include <boost/di/scopes/external.hpp>
+
+namespace boost { namespace di { namespace type_traits {
+
+template<class T>
+struct scope_traits {
+    using type = scopes::unique;
+};
+
+template<class T>
+struct scope_traits<T&> {
+    using type = scopes::external;
+};
+
+template<class T>
+struct scope_traits<const T&> {
+    using type = scopes::unique;
+};
+
+template<class T>
+struct scope_traits<T*> {
+    using type = scopes::unique;
+};
+
+template<class T>
+struct scope_traits<const T*> {
+    using type = scopes::unique;
+};
+
+template<class T>
+struct scope_traits<T&&> {
+    using type = scopes::unique;
+};
+
+template<class T>
+struct scope_traits<const T&&> {
+    using type = scopes::unique;
+};
+
+template<class T, class TDeleter>
+struct scope_traits<std::unique_ptr<T, TDeleter>> {
+    using type = scopes::unique;
+};
+
+template<class T, class TDeleter>
+struct scope_traits<const std::unique_ptr<T, TDeleter>&> {
+    using type = scopes::unique;
+};
+
+template<class T>
+struct scope_traits<std::shared_ptr<T>> {
+    using type = scopes::shared;
+};
+
+template<class T>
+struct scope_traits<const std::shared_ptr<T>&> {
+    using type = scopes::shared;
+};
+
+#if (__has_include(<boost/shared_ptr.hpp>))
+    template<class T>
+    struct scope_traits<boost::shared_ptr<T>> {
+        using type = scopes::shared;
+    };
+
+    template<class T>
+    struct scope_traits<const boost::shared_ptr<T>&> {
+        using type = scopes::shared;
+    };
+#endif
+
+template<class T>
+struct scope_traits<std::weak_ptr<T>> {
+    using type = scopes::shared;
+};
+
+template<class T>
+struct scope_traits<const std::weak_ptr<T>&> {
+    using type = scopes::shared;
+};
+
+template<class T>
+using scope_traits_t = typename scope_traits<T>::type;
+
+}}} // boost::di::type_traits
+
 #include <boost/di.hpp>
 
 namespace boost {
@@ -43,7 +134,7 @@ class mocks_provider {
         > auto get(const TInitialization&
                  , const TMemory&
                  , TArgs&&... args) const {
-            return new T(std::forward<TArgs>(args)...);
+            return new T{std::forward<TArgs>(args)...};
         }
 
         template<

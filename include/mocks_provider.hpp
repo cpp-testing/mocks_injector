@@ -133,7 +133,7 @@ class mocks_provider {
           , std::enable_if_t<is_resolvable<I>{} || !std::is_polymorphic<T>{}, int> = 0
         > auto get(const TInitialization&
                  , const TMemory&
-                 , TArgs&&... args) const {
+                 , TArgs&&... args) {
             return new T{std::forward<TArgs>(args)...};
         }
 
@@ -146,11 +146,11 @@ class mocks_provider {
           , std::enable_if_t<!is_resolvable<I>{} && std::is_polymorphic<T>{}, int> = 0
         > auto get(const TInitialization&
                  , const TMemory&
-                 , TArgs&&...) const {
+                 , TArgs&&...) {
             return self_.acquire<T>();
         }
 
-        const mocks_provider& self_;
+        mocks_provider& self_;
     };
 
 public:
@@ -158,28 +158,11 @@ public:
         : injector_(injector)
     { }
 
-    template<class T>
-    operator T() const {
-        return injector_.template create<T>();
-    }
-
-    template<class T>
-    T* acquire() const {
-        auto it = mocks_.find(std::type_index(typeid(T)));
-        if (it != mocks_.end()) {
-            return static_cast<T*>(it->second);
-        }
-
-        auto* ptr = repository_.Mock<T>();
-        mocks_[std::type_index(typeid(T))] = ptr;
-        return ptr;
-    }
-
     auto provider() const noexcept {
-        return mock_provider{*this};
+        return mock_provider{(mocks_provider&)*this};
     }
 
-    auto policies() const noexcept {
+    auto policies() noexcept {
         return di::make_policies(
             [&](auto type) {
                 using T = typename decltype(type)::type;
@@ -193,28 +176,47 @@ public:
     };
 
     template<class T>
-    void expect_dtor(const std::false_type& // is_resolvable
-                   , const std::true_type& // is_smart_ptr
-                   , const std::true_type& // is_polymorphic
-    ) const {
+    operator T() const {
+        return injector_.template create<T>();
+    }
+
+    MockRepository& repository() {
+        return repository_;
+    }
+
+    template<class T>
+    T* acquire() {
+        auto it = mocks_.find(std::type_index(typeid(T)));
+        if (it != mocks_.end()) {
+            return static_cast<T*>(it->second);
+        }
+
+        auto* ptr = repository_.Mock<T>();
+        mocks_[std::type_index(typeid(T))] = ptr;
+        return ptr;
+    }
+
+private:
+    template<class T>
+    void expect_dtor(const std::false_type& /*is_resolvable*/
+                   , const std::true_type& /*is_smart_ptr*/
+                   , const std::true_type& /*is_polymorphic*/) {
         repository_.ExpectCallDestructor(acquire<aux::decay_t<T>>());
     }
 
     template<class>
-    void expect_dtor(...) const { }
+    void expect_dtor(...) { }
 
-    mutable MockRepository repository_;
-
-private:
     const TInjector& injector_;
-    mutable std::unordered_map<std::type_index, void*> mocks_;
+    std::unordered_map<std::type_index, void*> mocks_;
+    MockRepository repository_;
 };
 
 } // namespace di
 } // namespace boost
 
 #define EXPECT_CALL(obj, func) \
-    obj.repository_.ExpectCall(obj.acquire<typename boost::di::aux::function_traits<decltype(&func)>::base_type>(), func)
+    obj.repository().ExpectCall(obj.acquire<typename boost::di::aux::function_traits<decltype(&func)>::base_type>(), func)
 
 #endif
 
